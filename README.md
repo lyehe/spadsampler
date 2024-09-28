@@ -32,7 +32,7 @@ Binomial Sampler is a Python tool for resampling image and video data using bino
 
    ```bash
    mamba env create -f environment.yml
-   mamba activate binomial_sampler
+   conda activate binomial_sampler
    ```
 
    ### Using pip

@@ -3,7 +3,7 @@ import sys
 import numpy as np
 from pathlib import Path
 from typing import Tuple, Optional
-from .io_utils.io import load_input, save_tiff
+from .io_utils.io_utils import load_input, save_tiff
 from .processing import determine_input_structure, process_frame
 from .visualization import plot_input_output
 

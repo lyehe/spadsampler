@@ -10,9 +10,11 @@ channels:
 dependencies:
   - python=3.10
   - numpy
-  - opencv
   - tifffile
   - h5py
   - matplotlib
   - pytest
   - zarr
+  - pip
+  - pip:
+      - opencv-python
