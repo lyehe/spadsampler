@@ -3,9 +3,10 @@ import sys
 import numpy as np
 from pathlib import Path
 from typing import Tuple, Optional
-from .io_utils.io_utils import load_input, save_tiff
+from .lazyloader.lazyloader import load_input, save_tiff
 from .processing import determine_input_structure, process_frame
 from .visualization import plot_input_output
+
 
 def process_and_save(
     input_data: np.ndarray,
@@ -21,6 +22,7 @@ def process_and_save(
     else:
         process_single(input_data, output_prefix, start_range, end_range)
 
+
 def process_single(
     data: np.ndarray,
     output_prefix: Path,
@@ -34,16 +36,27 @@ def process_single(
     for i in range(start_range, end_range + 1):
         p = 2**i / mean
         sample, binary_sample = process_frame(data, p)
-        
+
         frame_suffix = f"_frame{frame_idx}" if frame_idx is not None else ""
-        
-        save_tiff(sample, output_prefix.with_name(f"{output_prefix.stem}{frame_suffix}_p={2**i:.5f}_noclip.tif"))
+
+        save_tiff(
+            sample,
+            output_prefix.with_name(
+                f"{output_prefix.stem}{frame_suffix}_p={2**i:.5f}_noclip.tif"
+            ),
+        )
 
         mean_signal = binary_sample.mean()
-        save_tiff(binary_sample, output_prefix.with_name(f"{output_prefix.stem}{frame_suffix}_p={2**i:.5f}_m={mean_signal:.5f}.tif"))
-        
+        save_tiff(
+            binary_sample,
+            output_prefix.with_name(
+                f"{output_prefix.stem}{frame_suffix}_p={2**i:.5f}_m={mean_signal:.5f}.tif"
+            ),
+        )
+
         print(f"p: {p}, mean_signal: {mean_signal}")
         plot_input_output(data, sample, p, title=f"p={p:.5f}")
+
 
 def main(
     input_path: Path,
@@ -56,7 +69,10 @@ def main(
     input_data = load_input(input_path, frame_size)
     input_structure = determine_input_structure(input_data)
     print("Input data structure:", input_structure)
-    process_and_save(input_data, output_prefix, start_range, end_range, process_by_frame)
+    process_and_save(
+        input_data, output_prefix, start_range, end_range, process_by_frame
+    )
+
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Process and resample input data.")

@@ -15,6 +15,7 @@ dependencies:
   - matplotlib
   - pytest
   - zarr
+  - xmltodict
   - pip
   - pip:
       - opencv-python
