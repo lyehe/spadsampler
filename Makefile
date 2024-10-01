@@ -40,7 +40,7 @@ type-check:
 clean:
 	rm -rf build dist .eggs *.egg-info
 	rm -rf .pytest_cache .ruff_cache .mypy_cache
-	find . -type d -name __pycache__ -exec rm -rf {} +
+	$(PYTHON) -c "import shutil; import os; [shutil.rmtree(os.path.join(root, d)) for root, dirs, _ in os.walk('.') for d in dirs if d == '__pycache__']"
 
 ci:
 	$(TOX) -e py310,py311,py312,lint-format-type

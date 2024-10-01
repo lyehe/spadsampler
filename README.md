@@ -9,6 +9,9 @@ You can clone this repository or install SPADSampler using pip:
 ```bash
 # Install directly from GitHub
 pip install git+https://github.com/lyehe/spadsampler.git
+
+# Install from PyPI
+pip install spadsampler
 ```
 
 ### Quick Start with Google Colab

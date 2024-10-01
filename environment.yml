@@ -16,3 +16,11 @@ dependencies:
   - pip:
       - opencv-python
       - lazyimread
+
+dev-dependencies:
+  - ruff
+  - mypy
+  - tox
+  - build
+  - twine
+  - pre-commit
