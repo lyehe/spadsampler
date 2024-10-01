@@ -1,13 +1,23 @@
 """Imports for the package."""
 
-from .processing import convert_to_grayscale, determine_input_structure, process_frame
-from .visualization import plot_input_output
+from .spadsampler import (
+    MeanAxis,
+    PathVar,
+    SamplingRange,
+    binomial_sampling,
+    compute_histogram,
+    imshow_pairs,
+    plot_histogram,
+    sample_data,
+)
 
 __all__ = [
-    "save_tiff",
-    "save_hdf5",
-    "determine_input_structure",
-    "convert_to_grayscale",
-    "process_frame",
-    "plot_input_output",
+    "MeanAxis",
+    "SamplingRange",
+    "PathVar",
+    "compute_histogram",
+    "plot_histogram",
+    "binomial_sampling",
+    "sample_data",
+    "imshow_pairs"
 ]

@@ -28,21 +28,19 @@ dependencies = [
     "zarr",
     "xmltodict",
     "PyYAML",
-    "lazyimread"
+    "lazyimread",
+    "matplotlib",
 ]
 
-
 [project.optional-dependencies]
-dev = ["pytest", "matplotlib", "ruff", "pytest-asyncio", "tox", "pre-commit"]
+dev = ["pytest", "ruff", "tox", "pre-commit"]
 
 [tool.hatch.build.targets.wheel]
-packages = ["src/lazyimread"]
+packages = ["src/spadsampler"]
 
 [tool.pytest.ini_options]
 pythonpath = [".", "src"]
 testpaths = ["tests"]
-asyncio_mode = "auto"
-asyncio_default_fixture_loop_scope = "function"
 
 [tool.ruff]
 line-length = 100
@@ -72,7 +70,7 @@ select = [
 "tests/*" = ["S101"]
 
 [tool.ruff.lint.isort]
-known-first-party = ["lazyimread"]
+known-first-party = ["spadsampler"]
 
 [tool.ruff.lint.pydocstyle]
 convention = "google"

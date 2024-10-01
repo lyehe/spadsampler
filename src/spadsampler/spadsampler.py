@@ -5,9 +5,8 @@ from pathlib import Path
 
 import matplotlib.pyplot as plt
 import numpy as np
-from tqdm import tqdm
-
 from lazyimread import imread, imsave, predict_dimension_order
+from tqdm import tqdm
 
 SamplingRange = tuple[int, int] | tuple[float, ...]
 PathVar = Path | str
@@ -36,7 +35,7 @@ def compute_histogram(
     :param max_size: Maximum size for each dimension when subsampling, defaults to 128
     :return: Histogram and bin edges
     """
-    subsample_factors = np.ceil(np.array(data.shape) / max_size).astype(int)
+    subsample_factors = (np.array(data.shape) // max_size).astype(int)
     if np.any(subsample_factors > 1):
         slices = tuple(slice(None, None, factor) for factor in subsample_factors)
         subsampled_data = data[slices].ravel()
@@ -50,19 +49,19 @@ def compute_histogram(
 
 def plot_histogram(
     data: np.ndarray,
-    bins: int = 256,
+    max_size: int = 128,
     figsize: tuple[int, int] = (10, 6),
     scale: float | None = None,
 ) -> None:
     """Plot the histogram.
 
     :param data: Input numpy array
-    :param bins: Number of histogram bins, defaults to 256
+    :param max_size: Maximum size for each dimension when subsampling, defaults to 128
     :param figsize: Figure size, defaults to (10, 6)
     :param scale: Scale factor, defaults to None
     :return: None
     """
-    hist, bin_edges = compute_histogram(data, scale, bins=bins)
+    hist, bin_edges = compute_histogram(data, max_size=max_size, scale=scale)
     plt.figure(figsize=figsize)
     plt.bar(bin_edges[:-1], hist, width=np.diff(bin_edges), align="edge")
     plt.xlabel("Pixel Value")
@@ -84,6 +83,8 @@ def binomial_sampling(
     :return: Dictionary of probabilities and their corresponding samples and p
     """
     mean = data.mean(axis=axis, keepdims=True)
+    if data.dtype not in (np.uint8, np.uint16):
+        data = data.astype(np.uint16)
     p_range = p_range if 0 < p_range[0] < 1 else tuple(2**i for i in range(p_range[0], p_range[1]))
     p_tqdm = tqdm(p_range, colour="green")
     output = {}
@@ -114,24 +115,33 @@ def sample_data(
     :param process_by_frame: Axis along which to compute the mean, defaults to MeanAxis.XY
     :return: Dictionary of probabilities and their corresponding samples and p
     """
+    # If the input is a path and no output is provided, set the output to the input path
     if output is None and isinstance(input, PathVar):
         input = Path(input)
         output = input.parent / f"{input.stem}_resampled"
-        name = input.stem
+        file_name = input.stem
+    elif output is not None:
+        file_name = output.stem
 
-    input = imread(input) if isinstance(input, Path) else input
+    # Read the input data if it is a path
+    input = input if isinstance(input, np.ndarray) else imread(input)
     if scale_down is not None:
         input /= scale_down
 
+    # Predict the dimension order if not provided
     dim_order = dim_order or predict_dimension_order(input)
     if len(dim_order) != input.ndim:
         raise ValueError("Dimension order does not match data dimensions")
+
+    # Determine the axis to process by
     axis = tuple([dim_order.index(i) for i in dim_order if i in str(process_by_frame)])
 
+    # KEY LOGIC
     resampled_data = binomial_sampling(input, axis=axis, p_range=range)
+
     if output is not None:
         for key, value in resampled_data.items():
-            imsave(output / f"{name}_{key}.tif", value[0])
+            imsave(value[0], output / f"{file_name}_{key}.tif")
     return resampled_data
 
 
