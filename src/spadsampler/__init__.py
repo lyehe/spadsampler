@@ -22,3 +22,5 @@ __all__ = [
     "sample_data",
     "imshow_pairs",
 ]
+
+__version__ = "0.1.1"
