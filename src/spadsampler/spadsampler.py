@@ -129,8 +129,11 @@ def binomial_sampling(
             else:
                 logger.error(f"Invalid p_range: {p_range}")
                 raise ValueError(f"Invalid p_range: {p_range}")
-        case (float(p), *_):  # tuple of floats
-            p_range = tuple(sorted([i for i in p_range if isinstance(i, float) and 0 < i < 1]))
+        case (float(p), *rest):  # tuple of floats
+            valid_range = [float(i) for i in (p, *rest) if 0 < i < 1]
+            if not valid_range:
+                raise ValueError(f"Invalid p_range: {p_range}. No values between 0 and 1.")
+            p_range = tuple(sorted(valid_range))
         case _:  # invalid
             logger.error(f"Invalid p_range: {p_range}")
             raise ValueError(f"Invalid p_range: {p_range}")

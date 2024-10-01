@@ -225,3 +225,61 @@ def test_bernoulli_sampling(sample_data_2d: np.ndarray) -> None:
     custom_result_v, custom_result_p = bernoulli_sampling(sample_data_2d, p_range=(0.1, 0.2, 0.3))
     assert len(custom_result_v) == 3
     assert len(custom_result_p) == 3
+
+
+def test_binomial_sampling_large_range():
+    """Test if binomial_sampling handles a large range of probabilities."""
+    data = np.random.randint(0, 256, size=(100, 100), dtype=np.uint8)
+    large_range = tuple(2**i for i in range(-10, -1))  # 10 probabilities
+
+    result_v, result_p = binomial_sampling(data, p_range=large_range)
+
+    assert len(result_v) == len(large_range)
+    assert len(result_p) == len(large_range)
+
+
+def test_binomial_sampling_edge_cases():
+    """Test binomial_sampling with edge cases."""
+    data = np.random.randint(0, 256, size=(50, 50), dtype=np.uint8)
+
+    # Test with a single probability
+    single_p_result_v, single_p_result_p = binomial_sampling(
+        data,
+        p_range=-5,
+    )
+    assert len(single_p_result_v) == 1
+    assert len(single_p_result_p) == 1
+
+    # Test with very low probability
+    low_p_result_v, low_p_result_p = binomial_sampling(data, p_range=(-20, -19))
+    assert len(low_p_result_v) == 1
+    assert len(low_p_result_p) == 1
+    assert all(np.all(v == 0) for v in low_p_result_v.values())
+
+
+def test_binomial_sampling_error_handling():
+    """Test error handling in binomial_sampling."""
+    data = np.random.randint(0, 256, size=(50, 50), dtype=np.uint8)
+
+    with pytest.raises(ValueError, match="Invalid p_range"):
+        binomial_sampling(data, p_range=1.5)  # Invalid type
+
+    with pytest.raises(ValueError, match="Invalid p_range"):
+        binomial_sampling(data, p_range=(1.5, 1.5))  # Invalid probabilities
+
+    with pytest.raises(ValueError, match="Invalid p_range"):
+        binomial_sampling(data, p_range=(2, 2, 2))  # Invalid type
+
+
+def test_binomial_sampling_different_dtypes():
+    """Test binomial_sampling with different data types."""
+    data_types = [np.uint8, np.uint16, np.int32, np.float32]
+
+    for dtype in data_types:
+        data = np.random.randint(0, 256, size=(50, 50)).astype(dtype)
+        result_v, result_p = binomial_sampling(data)
+
+        assert len(result_v) == 5
+        assert len(result_p) == 5
+        for v in result_v.values():
+            assert v.dtype == np.uint8  # Output should always be uint8
