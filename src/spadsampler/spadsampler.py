@@ -72,7 +72,7 @@ def plot_histogram(
     """Plot the histogram."""
     if matplotlib.get_backend().lower() in ["agg", "cairo", "pdf", "pgf", "ps", "svg", "template"]:
         logger.warning("Non-interactive backend detected. Skipping plot generation.")
-        raise RuntimeError("Non-interactive backend detected. Skipping plot generation.")
+        return
 
     hist, bin_edges = compute_histogram(data, max_size=max_size, scale=scale)
     plt.figure(figsize=figsize)

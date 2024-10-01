@@ -62,8 +62,13 @@ def test_compute_histogram_with_scale(sample_data_2d: np.ndarray) -> None:
 @pytest.mark.skipif("not has_gui")
 def test_plot_histogram(sample_data_2d: np.ndarray) -> None:
     """Test if plot_histogram runs without errors."""
-    plot_histogram(sample_data_2d)
-    plt.close("all")
+    try:
+        plot_histogram(sample_data_2d)
+    except RuntimeError as e:
+        if "Non-interactive backend detected" in str(e):
+            pytest.skip("Skipping test due to non-interactive backend")
+        else:
+            raise
 
 
 def test_binomial_sampling(sample_data_2d: np.ndarray) -> None:
