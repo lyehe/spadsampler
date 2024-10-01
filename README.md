@@ -46,11 +46,11 @@ data = np.random.randint(0, 256, (40, 128, 128, 5), dtype=np.uint8)
 output, = sample_data(data, range=(-6, -3))
 
 # Visualize the results
-imshow_pairs({"Original": data, output})
+imshow_pairs(output)
 
 # Sample data using Bernoulli sampling
 output_b, = sample_data(data, range=(-6, -3), sampling_method=SamplingMethod.BERNOULLI)
 
-# Visualize the Bernoulli sampling results
-imshow_pairs({"Original": data, output_b})
+# Visualize the input and Bernoulli sampling results
+imshow_pairs({"Input": data} | output_b)
 ```
