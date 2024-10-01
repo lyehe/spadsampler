@@ -11,6 +11,7 @@ from spadsampler.spadsampler import (
     MeanAxis,
     PathVar,
     _determine_channel_and_slice,
+    bernoulli_sampling,
     binomial_sampling,
     compute_histogram,
     imshow_pairs,
@@ -31,6 +32,18 @@ def sample_data_3d() -> np.ndarray:
     return np.random.randint(0, 256, size=(10, 100, 100), dtype=np.uint8)
 
 
+@pytest.fixture(scope="session")
+def mpl_backend():
+    """Set the matplotlib backend to the current backend."""
+    return plt.get_backend()
+
+
+@pytest.fixture(scope="session")
+def has_gui(mpl_backend):
+    """Check if the current backend is a GUI backend."""
+    return mpl_backend.lower() not in ["agg", "cairo", "pdf", "pgf", "ps", "svg", "template"]
+
+
 def test_compute_histogram(sample_data_2d: np.ndarray) -> None:
     """Test if compute_histogram returns correct output types and sizes."""
     hist, bin_edges = compute_histogram(sample_data_2d)
@@ -46,40 +59,49 @@ def test_compute_histogram_with_scale(sample_data_2d: np.ndarray) -> None:
     assert np.max(hist) <= 128
 
 
+@pytest.mark.skipif("not has_gui")
 def test_plot_histogram(sample_data_2d: np.ndarray) -> None:
     """Test if plot_histogram runs without errors."""
-    plt.figure()
     plot_histogram(sample_data_2d)
-    plt.close()
+    plt.close("all")
 
 
 def test_binomial_sampling(sample_data_2d: np.ndarray) -> None:
     """Test if binomial_sampling returns correct output structure and types."""
-    result = binomial_sampling(sample_data_2d)
-    assert isinstance(result, dict)
-    assert len(result) == 5  # Default range is (-7, -2), so 5 samples
-    for key, (sampled_array, p) in result.items():
+    result_v, result_p = binomial_sampling(sample_data_2d)
+    assert isinstance(result_v, dict)
+    assert isinstance(result_p, dict)
+    assert len(result_v) == 5  # Default range is (-7, -2), so 5 samples
+    assert len(result_p) == 5
+    for key, sampled_array in result_v.items():
         assert isinstance(key, str)
         assert isinstance(sampled_array, np.ndarray)
         assert sampled_array.shape == sample_data_2d.shape
+    for key, p in result_p.items():
+        assert isinstance(key, str)
         assert isinstance(p, np.ndarray)
 
 
 def test_binomial_sampling_custom_range(sample_data_2d: np.ndarray) -> None:
     """Test if binomial_sampling works with custom probability ranges."""
-    result = binomial_sampling(sample_data_2d, p_range=(0.1, 0.2, 0.3))
-    assert len(result) == 3
+    result_v, result_p = binomial_sampling(sample_data_2d, p_range=(0.1, 0.2, 0.3))
+    assert len(result_v) == 3
+    assert len(result_p) == 3
 
 
 def test_sample_data_with_array(sample_data_3d: np.ndarray) -> None:
     """Test if sample_data works correctly with numpy array input."""
-    result = sample_data(sample_data_3d)
-    assert isinstance(result, dict)
-    assert len(result) == 5
-    for key, (sampled_array, p) in result.items():
+    result_v, result_p = sample_data(sample_data_3d)
+    assert isinstance(result_v, dict)
+    assert isinstance(result_p, dict)
+    assert len(result_v) == 5
+    assert len(result_p) == 5
+    for key, sampled_array in result_v.items():
         assert isinstance(key, str)
         assert isinstance(sampled_array, np.ndarray)
         assert sampled_array.shape == sample_data_3d.shape
+    for key, p in result_p.items():
+        assert isinstance(key, str)
         assert isinstance(p, np.ndarray)
 
 
@@ -90,46 +112,50 @@ def test_sample_data_with_file(tmp_path: Path) -> None:
 
     tifffile.imwrite(input_path, data)
 
-    result = sample_data(input_path, output=tmp_path)
-    assert isinstance(result, dict)
-    assert len(result) == 5
+    result_v, result_p = sample_data(input_path, output=tmp_path)
+    assert isinstance(result_v, dict)
+    assert isinstance(result_p, dict)
+    assert len(result_v) == 5
+    assert len(result_p) == 5
     assert len(list(tmp_path.glob("*.tif"))) == 6
 
 
 def test_sample_data_custom_process_by_frame(sample_data_3d: np.ndarray) -> None:
     """Test if sample_data works with custom process_by_frame parameter."""
-    result = sample_data(sample_data_3d, process_by_frame=MeanAxis.ZXY)
-    assert isinstance(result, dict)
-    assert len(result) == 5
+    result_v, result_p = sample_data(sample_data_3d, process_by_frame=MeanAxis.ZXY)
+    assert isinstance(result_v, dict)
+    assert isinstance(result_p, dict)
+    assert len(result_v) == 5
+    assert len(result_p) == 5
 
 
+@pytest.mark.skipif("not has_gui")
 @pytest.mark.parametrize("dim_order", ["YX", "CYX", "ZCYX", "TZCYX"])
 def test_imshow_pairs(dim_order: str) -> None:
     """Test if imshow_pairs handles different dimension orders correctly."""
     shape = [10 if dim in dim_order else 100 for dim in "TZCYX"]
     data = np.random.randint(0, 256, size=shape, dtype=np.uint8)
-    plt.figure()
     imshow_pairs({"Test": data})
-    plt.close()
+    plt.close("all")
 
 
+@pytest.mark.skipif("not has_gui")
 def test_imshow_pairs_rgb() -> None:
     """Test if imshow_pairs correctly handles RGB data."""
     data_rgb = np.random.randint(0, 256, size=(100, 100, 3), dtype=np.uint8)
-    plt.figure()
     imshow_pairs({"RGB Test": data_rgb})
-    plt.close()
+    plt.close("all")
 
 
+@pytest.mark.skipif("not has_gui")
 def test_imshow_pairs_multiple_images(sample_data_2d: np.ndarray) -> None:
     """Test if imshow_pairs correctly handles multiple input images."""
     images = {
         "Image 1": sample_data_2d,
         "Image 2": sample_data_2d * 2,
     }
-    plt.figure()
     imshow_pairs(images)
-    plt.close()
+    plt.close("all")
 
 
 def test_mean_axis_enum() -> None:
@@ -171,3 +197,30 @@ def test_binomial_sampling_invalid_range() -> None:
     """Test if binomial_sampling raises an error with invalid range."""
     with pytest.raises(ValueError, match="p < 0, p > 1 or p contains NaNs"):
         binomial_sampling(np.random.rand(10, 10), p_range=(1, 2))  # Invalid range
+
+
+def test_bernoulli_sampling(sample_data_2d: np.ndarray) -> None:
+    """Test if bernoulli_sampling returns correct output structure and types."""
+    result_v, result_p = bernoulli_sampling(sample_data_2d)
+    assert isinstance(result_v, dict)
+    assert isinstance(result_p, dict)
+    assert len(result_v) == 5  # Default range is (-7, -2), so 5 samples
+    assert len(result_p) == 5
+    for key, sampled_array in result_v.items():
+        assert isinstance(key, str)
+        assert isinstance(sampled_array, np.ndarray)
+        assert sampled_array.shape == sample_data_2d.shape
+        assert sampled_array.dtype == bool  # Check if the output is boolean
+    for key, p in result_p.items():
+        assert isinstance(key, str)
+        assert isinstance(p, np.ndarray)
+
+    # Check if the keys are formatted correctly
+    for key in result_v.keys():
+        assert key.startswith("P")
+        assert "d" in key  # Decimal point is replaced with 'd'
+
+    # Test with custom range
+    custom_result_v, custom_result_p = bernoulli_sampling(sample_data_2d, p_range=(0.1, 0.2, 0.3))
+    assert len(custom_result_v) == 3
+    assert len(custom_result_p) == 3

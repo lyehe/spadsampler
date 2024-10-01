@@ -5,7 +5,7 @@ build-backend = "hatchling.build"
 [project]
 name = "spadsampler"
 version = "0.1.0"
-description = "A lazy image reading library for various file formats"
+description = "A library for creating binomial sampled data mimicking SPAD images."
 authors = [{ name = "Yehe Liu", email = "yehe@case.edu" }]
 license = { text = "CC0 1.0 Universal (CC0 1.0) Public Domain Dedication" }
 readme = "README.md"
@@ -21,13 +21,6 @@ classifiers = [
 ]
 requires-python = ">=3.10"
 dependencies = [
-    "numpy",
-    "opencv-python",
-    "tifffile",
-    "h5py",
-    "zarr",
-    "xmltodict",
-    "PyYAML",
     "lazyimread",
     "matplotlib",
 ]
