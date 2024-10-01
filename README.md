@@ -1,4 +1,8 @@
 ### SPADSampler
+![CI](https://github.com/lyehe/spadsampler/workflows/CI/badge.svg)
+[![PyPI - Version](https://img.shields.io/pypi/v/spadsampler)](https://pypi.org/project/spadsampler/)
+[![License: CC0-1.0](https://img.shields.io/badge/License-CC0_1.0-lightgrey.svg)](http://creativecommons.org/publicdomain/zero/1.0/)
+[![Python Versions](https://img.shields.io/pypi/pyversions/spadsampler.svg)](https://pypi.org/project/spadsampler/)
 
 SPADSampler is a simple tool for creating binomial sampled data mimicking SPAD (Single-Photon Avalanche Diode) images. It provides tools for sampling, histogram computation, and visualization of image data. It has two sampling methods: Binomial and Bernoulli. The image is sampled using the integer value as the trails. A target range of mean photon counts are specified, and the image is sampled to match the specified range. If the sampling method is Bernoulli, the image is truncated to 0 or 1 to mimic the SPAD cut-off.
 
