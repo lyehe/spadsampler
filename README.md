@@ -17,8 +17,7 @@ pip install spadsampler
 ### Quick Start with Google Colab
 
 You can try out SPADSampler quickly using our Google Colab notebook:
-
-[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/lyehe/spadsampler/blob/main/examples.ipynb)
+[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://githubtocolab.com/lyehe/spadsampler/blob/master/examples.ipynb)
 
 ### Features
 
