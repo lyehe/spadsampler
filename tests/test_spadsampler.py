@@ -195,8 +195,9 @@ def test_imshow_pairs_empty_input() -> None:
 
 def test_binomial_sampling_invalid_range() -> None:
     """Test if binomial_sampling raises an error with invalid range."""
-    with pytest.raises(ValueError, match="p < 0, p > 1 or p contains NaNs"):
-        binomial_sampling(np.random.rand(10, 10), p_range=(1, 2))  # Invalid range
+    p_range = (1, 2, 3)
+    with pytest.raises(ValueError, match=r"Invalid p_range: \(1, 2, 3\)"):
+        binomial_sampling(np.random.rand(10, 10), p_range=p_range)  # Invalid range
 
 
 def test_bernoulli_sampling(sample_data_2d: np.ndarray) -> None:

@@ -105,10 +105,10 @@ def binomial_sampling(
             p = p if p < 0 else -p
             p_range = (2**p,)
         case (int(p), int(q)):  # tuple of ints
-            p = p if p < 0 else -p
-            q = q if q < 0 else -q
-            p, q = p, q if p < q else q, p
-            p_range = range(2**p, 2**q)
+            p = min(p, -p)
+            q = min(q, -q)
+            p, q = min(p, q), max(p, q)
+            p_range = tuple([2**i for i in range(p, q)])  # Convert range to tuple
         case float(p):  # single float
             if 0 < p < 1:
                 p_range = (p,)
