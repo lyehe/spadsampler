@@ -12,7 +12,7 @@ from tqdm import tqdm
 
 logger = getLogger(__name__)
 
-SamplingRange = tuple[int, int] | tuple[float, ...]
+SamplingRange = tuple[int, int] | tuple[float, ...] | int | float
 PathVar = Path | str
 
 
@@ -99,7 +99,28 @@ def binomial_sampling(
     if data.dtype not in (np.uint8, np.uint16):
         data = data.astype(np.uint16)
         logger.info("Data converted to uint16")
-    p_range = p_range if 0 < p_range[0] < 1 else tuple(2**i for i in range(p_range[0], p_range[1]))
+
+    match p_range:
+        case int(p):  # single int
+            p = p if p < 0 else -p
+            p_range = (2**p,)
+        case (int(p), int(q)):  # tuple of ints
+            p = p if p < 0 else -p
+            q = q if q < 0 else -q
+            p, q = p, q if p < q else q, p
+            p_range = range(2**p, 2**q)
+        case float(p):  # single float
+            if 0 < p < 1:
+                p_range = (p,)
+            else:
+                logger.error(f"Invalid p_range: {p_range}")
+                raise ValueError(f"Invalid p_range: {p_range}")
+        case (float(p), *_):  # tuple of floats
+            p_range = tuple(sorted([i for i in p_range if isinstance(i, float) and 0 < i < 1]))
+        case _:  # invalid
+            logger.error(f"Invalid p_range: {p_range}")
+            raise ValueError(f"Invalid p_range: {p_range}")
+
     logger.debug(f"Probability range: {p_range}")
     p_tqdm = tqdm(p_range, colour="green")
     output_v = {}
@@ -147,7 +168,7 @@ def sample_data(
     scale_down: float | None = None,
     dim_order: str | None = None,
     output: PathVar | None = None,
-    range: SamplingRange = (-7, -2),
+    p_range: SamplingRange = (-7, -2),
     process_by_frame: MeanAxis = MeanAxis.XY,
     sampling_method: SamplingMethod = SamplingMethod.BINOMIAL,
 ) -> tuple[dict[str, np.ndarray], dict[str, np.ndarray]]:
@@ -157,7 +178,7 @@ def sample_data(
     :param scale_down: Scale down factor, defaults to None
     :param dim_order: Dimension order of the input data, defaults to None
     :param output: Path to save output, defaults to None
-    :param range: Range of probabilities to sample, defaults to (-7, -2)
+    :param p_range: Range of probabilities to sample, defaults to (-7, -2)
     :param process_by_frame: Axis along which to compute the mean, defaults to MeanAxis.XY
     :return: Dicts of probabilities and their corresponding samples and p
     """
@@ -191,15 +212,20 @@ def sample_data(
 
     # KEY LOGIC
     if sampling_method == SamplingMethod.BINOMIAL:
-        resampled_data, sampling_p = binomial_sampling(input, axis=axis, p_range=range)
+        resampled_data, sampling_p = binomial_sampling(input, axis=axis, p_range=p_range)
     elif sampling_method == SamplingMethod.BERNOULLI:
-        resampled_data, sampling_p = bernoulli_sampling(input, axis=axis, p_range=range)
+        resampled_data, sampling_p = bernoulli_sampling(input, axis=axis, p_range=p_range)
 
     if output is not None:
         for key, value in resampled_data.items():
             output_path = output / f"{file_name}_{key}.tif"
-            imsave(value, output_path)
-            logger.info(f"Saved resampled data to: {output_path}")
+            if not output_path.parent.exists():
+                output_path.parent.mkdir(parents=True)
+            if not output_path.exists():
+                imsave(value, output_path)
+                logger.info(f"Saved resampled data to: {output_path}")
+            else:
+                logger.warning(f"Output file {output_path} already exists, skipping")
     return resampled_data, sampling_p
 
 
