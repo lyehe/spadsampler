@@ -23,4 +23,4 @@ __all__ = [
     "imshow_pairs",
 ]
 
-__version__ = "0.1.1"
+__version__ = "0.1.2"

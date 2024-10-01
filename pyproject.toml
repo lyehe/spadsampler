@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "spadsampler"
-version = "0.1.1"
+version = "0.1.2"
 description = "A library for creating binomial sampled data mimicking SPAD images."
 authors = [{ name = "Yehe Liu", email = "yehe@case.edu" }]
 license = { text = "CC0 1.0 Universal (CC0 1.0) Public Domain Dedication" }
