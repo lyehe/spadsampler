@@ -1,5 +1,7 @@
 """Main module of spadsampler."""
 
+import os
+from concurrent.futures import ProcessPoolExecutor, as_completed
 from enum import Enum
 from logging import getLogger
 from pathlib import Path
@@ -70,7 +72,7 @@ def plot_histogram(
     """Plot the histogram."""
     if matplotlib.get_backend().lower() in ["agg", "cairo", "pdf", "pgf", "ps", "svg", "template"]:
         logger.warning("Non-interactive backend detected. Skipping plot generation.")
-        return
+        raise RuntimeError("Non-interactive backend detected. Skipping plot generation.")
 
     hist, bin_edges = compute_histogram(data, max_size=max_size, scale=scale)
     plt.figure(figsize=figsize)
@@ -82,12 +84,24 @@ def plot_histogram(
     logger.info("Histogram plot displayed")
 
 
+def _process_single_p(args: tuple[float, np.ndarray, np.ndarray]) -> tuple[str, np.ndarray, float]:
+    """Process a single probability."""
+    i, data, mean = args
+    p_str = f"P{i:.5f}".replace(".", "d")
+    p = i / (mean + 1e-6)
+    if p > 1:
+        p = 1
+        logger.warning(f"Probability {p} is greater than 1, setting to 1")
+    sampled_array = np.random.binomial(data, p).astype(np.uint8)
+    return p_str, sampled_array, p
+
+
 def binomial_sampling(
     data: np.ndarray,
     axis: tuple[int, ...] | None = None,
     p_range: SamplingRange = (-7, -2),
 ) -> tuple[dict[str, np.ndarray], dict[str, np.ndarray]]:
-    """Compute the binomial sampling for the input data.
+    """Compute the binomial sampling for the input data using parallel processing.
 
     :param data: Input numpy array
     :param axis: Axis along which to compute the mean, defaults to None
@@ -122,17 +136,21 @@ def binomial_sampling(
             raise ValueError(f"Invalid p_range: {p_range}")
 
     logger.debug(f"Probability range: {p_range}")
-    p_tqdm = tqdm(p_range, colour="green")
+
     output_v = {}
     output_p = {}
-    for i in p_tqdm:
-        p_str = f"P{i:.5f}".replace(".", "d")
-        p_tqdm.set_description(f"Sampling {p_str}")
-        p = i / mean
-        sampled_array = np.random.binomial(data, p).astype(np.uint8)
-        output_v.update({p_str: sampled_array})
-        output_p.update({p_str: p})
-        logger.debug(f"Sampled array for {p_str} with shape {sampled_array.shape}")
+
+    max_workers = max(min(os.cpu_count() - 1, len(p_range)), 1)
+    with ProcessPoolExecutor(max_workers=max_workers) as executor:
+        futures = [executor.submit(_process_single_p, (i, data, mean)) for i in p_range]
+        for future in tqdm(
+            as_completed(futures), total=len(futures), colour="green", desc="Sampling"
+        ):
+            p_str, sampled_array, p = future.result()
+            output_v[p_str] = sampled_array
+            output_p[p_str] = p
+            logger.debug(f"Sampled array for {p_str} with shape {sampled_array.shape}")
+
     return output_v, output_p
 
 
@@ -163,13 +181,24 @@ def bernoulli_sampling(
     return new_output_v, new_output_p
 
 
+def _save_single_file(args: tuple[str, np.ndarray, PathVar, str]) -> None:
+    """Save a single file."""
+    key, value, output, file_name = args
+    output_path = output / f"{file_name}_{key}.tif"
+    if not output_path.exists():
+        imsave(value, output_path)
+        logger.info(f"Saved resampled data to: {output_path}")
+    else:
+        logger.warning(f"Output file {output_path} already exists, skipping")
+
+
 def sample_data(
     input: np.ndarray | PathVar,
     scale_down: float | None = None,
     dim_order: str | None = None,
     output: PathVar | None = None,
     p_range: SamplingRange = (-7, -2),
-    process_by_frame: MeanAxis = MeanAxis.XY,
+    process_by_frame: MeanAxis = MeanAxis.TZXY,
     sampling_method: SamplingMethod = SamplingMethod.BINOMIAL,
 ) -> tuple[dict[str, np.ndarray], dict[str, np.ndarray]]:
     """Main function for processing and saving the input data.
@@ -217,15 +246,21 @@ def sample_data(
         resampled_data, sampling_p = bernoulli_sampling(input, axis=axis, p_range=p_range)
 
     if output is not None:
-        for key, value in resampled_data.items():
-            output_path = output / f"{file_name}_{key}.tif"
-            if not output_path.parent.exists():
-                output_path.parent.mkdir(parents=True)
-            if not output_path.exists():
-                imsave(value, output_path)
-                logger.info(f"Saved resampled data to: {output_path}")
-            else:
-                logger.warning(f"Output file {output_path} already exists, skipping")
+        output = Path(output)
+        if not output.exists():
+            output.mkdir(parents=True)
+
+        max_workers = max(min(os.cpu_count() - 1, len(resampled_data)), 1)
+        with ProcessPoolExecutor(max_workers=max_workers) as executor:
+            futures = [
+                executor.submit(_save_single_file, (key, value, output, file_name))
+                for key, value in resampled_data.items()
+            ]
+            for future in tqdm(
+                as_completed(futures), total=len(futures), colour="blue", desc="Saving"
+            ):
+                future.result()
+
     return resampled_data, sampling_p
 
 
