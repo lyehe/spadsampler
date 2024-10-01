@@ -20,10 +20,7 @@ classifiers = [
     "Programming Language :: Python :: 3.12",
 ]
 requires-python = ">=3.10"
-dependencies = [
-    "lazyimread",
-    "matplotlib",
-]
+dependencies = ["tqdm", "lazyimread", "matplotlib"]
 
 [project.optional-dependencies]
 dev = ["pytest", "ruff", "tox", "pre-commit"]

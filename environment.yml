@@ -12,6 +12,7 @@ dependencies:
   - pytest
   - ipykernel
   - matplotlib
+  - tqdm
   - pip
   - pip:
       - opencv-python
