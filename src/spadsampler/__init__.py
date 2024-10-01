@@ -19,5 +19,5 @@ __all__ = [
     "plot_histogram",
     "binomial_sampling",
     "sample_data",
-    "imshow_pairs"
+    "imshow_pairs",
 ]
