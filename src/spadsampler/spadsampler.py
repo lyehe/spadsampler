@@ -30,6 +30,13 @@ class MeanAxis(Enum):
         return self.value
 
 
+class SamplingMethod(Enum):
+    """Enum for sampling method."""
+
+    BINOMIAL = "binomial"
+    BERNOULLI = "bernoulli"
+
+
 def compute_histogram(
     data: np.ndarray, max_size: int = 128, scale: float | None = None
 ) -> tuple[np.ndarray, np.ndarray]:
@@ -142,6 +149,7 @@ def sample_data(
     output: PathVar | None = None,
     range: SamplingRange = (-7, -2),
     process_by_frame: MeanAxis = MeanAxis.XY,
+    sampling_method: SamplingMethod = SamplingMethod.BINOMIAL,
 ) -> tuple[dict[str, np.ndarray], dict[str, np.ndarray]]:
     """Main function for processing and saving the input data.
 
@@ -182,7 +190,10 @@ def sample_data(
     logger.info(f"Processing axis: {axis}")
 
     # KEY LOGIC
-    resampled_data, sampling_p = binomial_sampling(input, axis=axis, p_range=range)
+    if sampling_method == SamplingMethod.BINOMIAL:
+        resampled_data, sampling_p = binomial_sampling(input, axis=axis, p_range=range)
+    elif sampling_method == SamplingMethod.BERNOULLI:
+        resampled_data, sampling_p = bernoulli_sampling(input, axis=axis, p_range=range)
 
     if output is not None:
         for key, value in resampled_data.items():

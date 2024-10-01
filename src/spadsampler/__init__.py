@@ -3,6 +3,7 @@
 from .spadsampler import (
     MeanAxis,
     PathVar,
+    SamplingMethod,
     SamplingRange,
     binomial_sampling,
     compute_histogram,
