@@ -88,10 +88,11 @@ def _process_single_p(args: tuple[float, np.ndarray, np.ndarray]) -> tuple[str, 
     """Process a single probability."""
     i, data, mean = args
     p_str = f"P{i:.5f}".replace(".", "d")
-    p = i / (mean + 1e-6)
-    if p > 1:
-        p = 1
-        logger.warning(f"Probability {p} is greater than 1, setting to 1")
+    p = i / mean
+    # Check if any value in p is greater than 1
+    if np.any(p > 1):
+        logger.warning(f"Probability {p_str} exceeds 1, capping at 1")
+        p = np.minimum(p, 1)
     sampled_array = np.random.binomial(data, p).astype(np.uint8)
     return p_str, sampled_array, p
 
